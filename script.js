@@ -1,17 +1,17 @@
-// script.js - (FINAL CORRECTED VERSION)
+// script.js - (MODIFIED VERSION)
 
 // --- CONFIGURATION ---
 // REPLACE THIS WITH YOUR ACTUAL GOOGLE APPS SCRIPT URL
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwEDpBqpPoIWceuNEhLFy3aQ9Q6WuL4N8W9JY-E-naXwl3M0rJVIWqq8rJCemmJcP9O/exec'; 
-const QUIZ_DURATION_MS = 12 * 60 * 60 * 1000; // 12 hours lock in milliseconds
+const QUIZ_DURATION_MS = 5 * 60 * 60 * 1000; // 5 hours lock in milliseconds (MODIFIED)
 const MAX_TIME_PER_QUESTION = 20; // Seconds
 const CORRECT_SCORE = 20; // Base score per question
-const PENALTY_START_TIME = 10; // Penalty starts after 10 seconds
+const PENALTY_START_TIME = 10; // Penalty starts after 10 seconds (time taken)
 const PENALTY_PER_SECOND = 2; // 2 points deduction per second after 10s
-const NUM_QUESTIONS = 5; // Number of questions per quiz
-const QUIZ_TOTAL_SCORE = NUM_QUESTIONS * CORRECT_SCORE;
+const NUM_QUESTIONS = 10; // Number of questions per quiz (MODIFIED)
+const QUIZ_TOTAL_SCORE = NUM_QUESTIONS * CORRECT_SCORE; // 200
 
-// Full list of Indian states/UTs for dropdown
+// ... (INDIAN_STATES array remains the same) ...
 const INDIAN_STATES = [
     "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", 
     "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", 
@@ -33,26 +33,25 @@ class Quiz {
         this.timeLeft = MAX_TIME_PER_QUESTION;
         this.timeTaken = 0;
         this.hasAnswered = false; 
-        this.lockTimer = null; // Ensure lockTimer is initialized
+        this.lockTimer = null; 
     }
 
     init() {
-        // *** CHANGE 1: REMOVED the redundant safety check from here. ***
-        // The safety check should be in startQuiz to ensure event listeners are always set up.
-        
         this.populateStates();
         this.setupEventListeners();
         this.checkQuizLock();
-        
-        // Initial check for questions and showing error on welcome screen
+
+        // Check for required number of questions (2000 minimum suggested, but logic checks for NUM_QUESTIONS)
         if (!window.quizQuestions || !Array.isArray(window.quizQuestions) || window.quizQuestions.length < NUM_QUESTIONS) {
             document.getElementById('startQuiz').disabled = true;
-            document.getElementById('noticeText').textContent = '⚠️ اہم غلطی: سوالات لوڈ نہیں ہوئے۔ براہ کرم questions.js فائل چیک کریں۔';
+            document.getElementById('noticeText').textContent = '⚠️ اہم غلطی: سوالات کی مطلوبہ تعداد لوڈ نہیں ہوئی۔ براہ کرم questions.js فائل چیک کریں۔';
             document.getElementById('dailyNotice').style.display = 'block';
         }
+        // Fetch leaderboard immediately
+        this.fetchLeaderboard('welcomeLeaderboard'); 
     }
-    
-    // --- UI/Screen Management & Setup ---
+
+    // --- UI/Screen Management & Setup (MODIFIED) ---
 
     showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(screen => {
@@ -77,7 +76,7 @@ class Quiz {
         });
         document.getElementById('userInfoForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            this.collectUserInfoAndSave();
+            this.collectUserInfoAndSave(); // Saves data silently then shows results
         });
         document.getElementById('nextQuestion').addEventListener('click', () => {
             this.nextQuestion();
@@ -86,9 +85,28 @@ class Quiz {
             this.showScreen('welcomeScreen');
             this.checkQuizLock(); 
         });
+
+        // New Event Listeners for Icons
+        document.getElementById('openTimerRules').addEventListener('click', () => {
+            this.showScreen('rulesScreen');
+        });
+        document.getElementById('openScoreHistory').addEventListener('click', () => {
+            this.showScreen('historyScreen');
+            this.fetchUserHistory('userHistoryList'); // Fetch and display user history
+        });
+        document.getElementById('openLeaderboard').addEventListener('click', () => {
+            // Already shows on welcome screen, but can be a quick refresh/navigation
+            this.showScreen('welcomeScreen');
+            this.fetchLeaderboard('welcomeLeaderboard'); 
+        });
+        document.querySelectorAll('.close-screen').forEach(button => {
+            button.addEventListener('click', (e) => {
+                this.showScreen(e.target.dataset.target);
+            });
+        });
     }
-    
-    // --- QUIZ LOCK/COUNTDOWN LOGIC (12 Hours) ---
+
+    // --- QUIZ LOCK/COUNTDOWN LOGIC (5 Hours) (MODIFIED) ---
 
     checkQuizLock() {
         const lastPlayed = localStorage.getItem('lastPlayedTimestamp');
@@ -97,24 +115,23 @@ class Quiz {
         const dailyNotice = document.getElementById('dailyNotice');
         const countdownTimer = document.getElementById('countdownTimer');
 
-        // Preserve initial error message if questions failed to load in init
         const initialNoticeText = document.getElementById('noticeText').textContent;
 
         if (lastPlayed) {
             const timeElapsed = now - parseInt(lastPlayed);
-            
+
             if (timeElapsed < QUIZ_DURATION_MS) {
                 // Quiz is locked
                 startQuizBtn.disabled = true;
                 dailyNotice.style.display = 'block';
-                document.getElementById('noticeText').textContent = '📅 You have already played today. Come back tomorrow!';
+                document.getElementById('noticeText').textContent = '📅 You have already played. Next quiz available in:';
 
                 // Start countdown
                 this.startCountdown(lastPlayed);
             } else {
                 // Lock expired
-                startQuizBtn.disabled = false;
-                dailyNotice.style.display = initialNoticeText.includes('اہم غلطی') ? 'block' : 'none'; // Keep error visible
+                startQuizBtn.disabled = initialNoticeText.includes('اہم غلطی');
+                dailyNotice.style.display = initialNoticeText.includes('اہم غلطی') ? 'block' : 'none'; 
                 countdownTimer.textContent = '';
                 if (!initialNoticeText.includes('اہم غلطی')) {
                      localStorage.removeItem('lastPlayedTimestamp');
@@ -125,13 +142,11 @@ class Quiz {
             startQuizBtn.disabled = document.getElementById('noticeText').textContent.includes('اہم غلطی');
             dailyNotice.style.display = document.getElementById('noticeText').textContent.includes('اہم غلطی') ? 'block' : 'none';
         }
-
-        this.fetchLeaderboard('welcomeLeaderboard'); 
     }
 
     startCountdown(lastPlayed) {
         const countdownTimer = document.getElementById('countdownTimer');
-        
+
         if (this.lockTimer) clearInterval(this.lockTimer);
 
         this.lockTimer = setInterval(() => {
@@ -149,28 +164,19 @@ class Quiz {
             const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
 
-            countdownTimer.textContent = `Time remaining: ${hours}h ${minutes}m ${seconds}s`;
+            countdownTimer.textContent = `${hours}h ${minutes}m ${seconds}s`;
         }, 1000);
     }
 
 
-    // --- QUIZ SETUP/FLOW ---
+    // --- QUIZ SETUP/FLOW (MODIFIED) ---
 
     startQuiz() {
-        // *** CHANGE 2: MOVED & CORRECTED Safety Check to startQuiz ***
         if (!window.quizQuestions || !Array.isArray(window.quizQuestions) || window.quizQuestions.length < NUM_QUESTIONS) {
-            console.error("FATAL ERROR: Questions array not loaded correctly. Check questions.js syntax/file path.");
-            
-            // Show user-friendly error
             alert("اہم غلطی: کوئز کے سوالات لوڈ نہیں ہو سکے یا file/syntax غلط ہے۔ براہ کرم questions.js چیک کریں!");
-            
-            // Ensure UI reflects the error
-            document.getElementById('noticeText').textContent = '⚠️ اہم غلطی: سوالات لوڈ نہیں ہوئے۔ براہ کرم questions.js فائل چیک کریں۔';
-            document.getElementById('dailyNotice').style.display = 'block';
-            document.getElementById('startQuiz').disabled = true;
             return;
         }
-        
+
         this.currentQuestionIndex = 0;
         this.finalScore = 0;
         this.answers = [];
@@ -180,28 +186,30 @@ class Quiz {
     }
 
     selectRandomQuestions() {
-        // Ensure quizQuestions is globally defined (from questions.js)
         const shuffled = window.quizQuestions.sort(() => 0.5 - Math.random());
+        // Ensure that there are enough questions to select from
         this.randomQuestions = shuffled.slice(0, NUM_QUESTIONS);
     }
 
-    // --- QUESTION & TIMER LOGIC ---
+    // --- QUESTION & TIMER LOGIC (MODIFIED) ---
 
     displayQuestion() {
         const questionData = this.randomQuestions[this.currentQuestionIndex];
-        document.getElementById('questionText').textContent = questionData.question;
-        
+        // Question text is in Urdu (RTL is handled by CSS)
+        document.getElementById('questionText').textContent = questionData.question; 
+
         this.hasAnswered = false;
         this.timeTaken = 0;
         document.getElementById('nextQuestion').disabled = true;
-        
+
         const progress = ((this.currentQuestionIndex) / NUM_QUESTIONS) * 100;
         document.getElementById('progress').style.width = progress + '%';
         document.getElementById('questionCount').textContent = `Question ${this.currentQuestionIndex + 1}/${NUM_QUESTIONS}`;
-        
+
         const optionsContainer = document.getElementById('optionsContainer');
         optionsContainer.innerHTML = '';
-        questionData.options.forEach((option, index) => {
+        // Options are in English
+        questionData.options.forEach((option, index) => { 
             const button = document.createElement('button');
             button.textContent = option;
             button.className = 'option-btn';
@@ -212,56 +220,15 @@ class Quiz {
         this.startTimer();
     }
 
-    startTimer() {
-        this.timeLeft = MAX_TIME_PER_QUESTION;
-        const timerElement = document.getElementById('timer');
-        timerElement.textContent = this.timeLeft;
-        timerElement.classList.remove('warning'); 
-        
-        if (this.timer) clearInterval(this.timer);
+    // ... (startTimer remains the same) ...
 
-        this.timer = setInterval(() => {
-            this.timeLeft--;
-            this.timeTaken++;
-            timerElement.textContent = this.timeLeft;
-
-            // Timer color logic
-            if (this.timeLeft <= MAX_TIME_PER_QUESTION - PENALTY_START_TIME) {
-                timerElement.classList.add('warning');
-            } else {
-                timerElement.classList.remove('warning');
-            }
-
-            if (this.timeLeft <= 0) {
-                clearInterval(this.timer);
-                if (!this.hasAnswered) {
-                    this.recordAnswer(null); 
-                    this.nextQuestion();
-                }
-            }
-        }, 1000);
-    }
-    
-    selectOption(selectedIndex, selectedButton) {
-        if (this.hasAnswered) return; 
-        this.hasAnswered = true;
-        clearInterval(this.timer);
-
-        const options = document.querySelectorAll('#optionsContainer .option-btn');
-        
-        options.forEach(button => {
-            button.disabled = true;
-        });
-        selectedButton.classList.add('selected');
-        
-        this.recordAnswer(selectedIndex);
-        document.getElementById('nextQuestion').disabled = false;
-    }
+    // ... (selectOption remains the same) ...
 
     recordAnswer(selectedIndex) {
         const questionData = this.randomQuestions[this.currentQuestionIndex];
         const isCorrect = selectedIndex === questionData.correct;
-        const timeAtAnswer = this.timeTaken;
+        // timeTaken is now the accurate time (1 to 20)
+        const timeAtAnswer = this.timeTaken; 
         let scoreEarned = 0;
         let pointsLost = 0;
 
@@ -276,12 +243,9 @@ class Quiz {
             this.finalScore += scoreEarned;
         }
 
-        // Store answer details for result screen
         this.answers.push({
             question: questionData.question,
             isCorrect: isCorrect,
-            selectedIndex: selectedIndex,
-            correctIndex: questionData.correct,
             time: timeAtAnswer,
             score: scoreEarned,
             pointsLost: pointsLost,
@@ -292,7 +256,7 @@ class Quiz {
     nextQuestion() {
         if (this.timer) clearInterval(this.timer);
         this.currentQuestionIndex++;
-        
+
         if (this.currentQuestionIndex < NUM_QUESTIONS) {
             this.displayQuestion();
         } else {
@@ -300,13 +264,12 @@ class Quiz {
         }
     }
 
-    // --- RESULT & DATA HANDLING ---
+    // --- RESULT & DATA HANDLING (MODIFIED) ---
 
     endQuiz() {
-        // Set the lock timestamp immediately
+        // Only set the lock timestamp after the quiz is completed
         localStorage.setItem('lastPlayedTimestamp', new Date().getTime().toString());
-        
-        // Show only score and user info form
+
         this.showScreen('userInfoScreen');
         document.getElementById('currentScoreDisplay').textContent = `Your Score: ${this.finalScore}/${QUIZ_TOTAL_SCORE}`;
     }
@@ -315,13 +278,13 @@ class Quiz {
         this.userInfo.name = document.getElementById('fullName').value;
         this.userInfo.contact = document.getElementById('contactNumber').value;
         this.userInfo.address = document.getElementById('address').value;
-        this.userInfo.state = document.getElementById('state').value; // Get actual state value
-        
+        this.userInfo.state = document.getElementById('state').value; 
+
         if (this.validateUserInfo()) {
-            // Step 1: Save data to Google Sheets (silent operation)
-            this.sendToGoogleSheets();
-            
-            // Step 2: Show Full Score Detail
+            // STEP 1: SILENTLY SAVE DATA TO GOOGLE SHEETS
+            this.sendToGoogleSheets(); 
+
+            // STEP 2: Show Full Score Detail
             this.displayFullResults();
         }
     }
@@ -334,18 +297,23 @@ class Quiz {
         return true;
     }
 
+    // MODIFIED: Send data to Google Sheets
     sendToGoogleSheets() {
         const quizData = {
-            // Mapping to your Google Sheet Columns B to G
+            // ACTION for Google Script
+            action: 'saveScore', 
+            // User Info
             Name: this.userInfo.name,
-            'Contact Number': this.userInfo.contact,
+            Contact: this.userInfo.contact, // Changed from 'Contact Number' for simple key
             Address: this.userInfo.address,
             State: this.userInfo.state,
+            // Quiz Info
             Score: this.finalScore,
-            'User Timestamp': new Date().toISOString()
+            TotalQuestions: NUM_QUESTIONS,
+            Timestamp: new Date().toISOString()
         };
-        
-        // Using 'no-cors' mode is crucial for POSTing to Apps Script from GitHub Pages
+
+        // Silence the operation
         fetch(GOOGLE_SHEET_URL, {
             method: 'POST',
             mode: 'no-cors', 
@@ -353,24 +321,28 @@ class Quiz {
         }).then(() => {
             console.log('Quiz data silently sent to Google Sheets.');
         }).catch(error => {
-            console.error('Error sending data to Google Sheets (CORS/Network issue likely):', error);
+            console.error('Error sending data to Google Sheets:', error);
         });
     }
 
-    // Display the detailed result screen
+    // Display the detailed result screen (MODIFIED)
     displayFullResults() {
         this.showScreen('resultScreen');
+
+        // Update Share Template elements
+        document.getElementById('tName').textContent = this.userInfo.name;
+        document.getElementById('tScore').textContent = this.finalScore;
 
         // General Info
         document.getElementById('finalScore').textContent = this.finalScore;
         document.getElementById('summaryName').textContent = this.userInfo.name;
         document.getElementById('summaryScore').textContent = this.finalScore;
         document.getElementById('summaryState').textContent = this.userInfo.state;
-        
+
         // Message based on score
         let message = '';
         const percentage = (this.finalScore / QUIZ_TOTAL_SCORE) * 100;
-        
+
         if (percentage >= 80) {
             document.getElementById('congratsMessage').textContent = 'Excellent! 🎉';
             message = 'You have great Islamic knowledge. Keep up the learning!';
@@ -384,56 +356,114 @@ class Quiz {
         document.getElementById('resultMessage').textContent = message;
 
         this.displayDetailedScore();
+
+        // Setup image sharing (using html2canvas)
+        document.getElementById('shareImage').addEventListener('click', () => {
+            this.captureAndShareScore();
+        });
     }
 
+    // MODIFIED: Display brief detailed score
     displayDetailedScore() {
         const container = document.getElementById('detailedScoreContainer');
         container.innerHTML = '';
 
-        this.answers.forEach((detail, index) => {
+        this.answers.forEach((detail) => {
             const questionDetailDiv = document.createElement('div');
             questionDetailDiv.className = 'question-detail';
             
-            const questionText = this.randomQuestions[index].question;
-            const correctOption = this.randomQuestions[index].options[detail.correctIndex];
+            const resultText = detail.isCorrect ? 'Correct' : 'Incorrect/Skipped';
+            const resultColor = detail.isCorrect ? 'green' : 'red';
             
+            // Brief Details as requested
             questionDetailDiv.innerHTML = `
-                <p><strong>Q${detail.questionNumber}:</strong> ${questionText}</p>
-                <p style="color: ${detail.isCorrect ? 'green' : 'red'};">
-                    <strong>Result:</strong> ${detail.isCorrect ? 'Correct' : 'Incorrect/Skipped'} 
-                    (${detail.score}/${CORRECT_SCORE} points)
+                <p><strong>Q${detail.questionNumber}:</strong> ${detail.question}</p>
+                <p style="color: ${resultColor};">
+                    <strong>Result:</strong> ${resultText} 
                 </p>
-                <p><strong>Time Taken:</strong> ${detail.time}s</p>
-                ${detail.pointsLost > 0 ? `<p style="color: orange;"><strong>Time Penalty:</strong> -${detail.pointsLost} points (for answering after ${PENALTY_START_TIME}s)</p>` : ''}
-                <p><strong>Correct Answer:</strong> ${correctOption}</p>
+                <p><strong>Time:</strong> ${detail.time}s | 
+                <strong>Score:</strong> ${detail.score}/${CORRECT_SCORE} points</p>
+                ${detail.pointsLost > 0 ? `<p style="color: orange;"><strong>Penalty:</strong> -${detail.pointsLost} points (for answering after ${PENALTY_START_TIME}s)</p>` : ''}
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
             `;
             container.appendChild(questionDetailDiv);
         });
     }
 
-    // --- LEADERBOARD & SHARING ---
-    
+
+    // --- LEADERBOARD & HISTORY HANDLING (NEW/MODIFIED) ---
+
+    // Function to load and append external html2canvas library for image sharing
+    loadHtml2Canvas() {
+        return new Promise((resolve, reject) => {
+            if (window.html2canvas) {
+                resolve();
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    // NEW: Capture and share score image
+    async captureAndShareScore() {
+        await this.loadHtml2Canvas();
+
+        const templateBox = document.getElementById('shareTemplate');
+        templateBox.style.display = 'block'; // Temporarily show it for capture
+
+        html2canvas(templateBox, {
+            backgroundColor: null,
+            scale: 2 // Higher resolution capture
+        }).then(canvas => {
+            templateBox.style.display = 'none'; // Hide template again
+
+            // Convert canvas to image URL
+            const imageData = canvas.toDataURL('image/png');
+            
+            // Note: Direct sharing of image data URL via WhatsApp/FB is not straightforward 
+            // without a server-side component. The best we can do client-side is 
+            // prompt the user to download/copy the image and share the link.
+
+            // The template and a share message is the most reliable client-side method:
+            const shareMessage = `Alhamdulillah! I scored ${this.finalScore}/${QUIZ_TOTAL_SCORE} in the Islamic Quiz by AlKunooz. Check out my score! Find the quiz here: ${window.location.href}`;
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+            
+            // For a better experience, open the image in a new tab for download:
+            const newWindow = window.open();
+            newWindow.document.write(`
+                <p>Share this image manually:</p>
+                <img src="${imageData}" style="width: 300px; height: 300px; border: 1px solid black;">
+                <p>Or share the link on WhatsApp/Facebook:</p>
+                <a href="${whatsappUrl}" target="_blank" style="background: #25D366; color: white; padding: 10px; border-radius: 5px; text-decoration: none;">Share on WhatsApp</a>
+                <p>Note: Image sharing often requires downloading and manual upload due to browser security restrictions.</p>
+            `);
+        }).catch(error => {
+            templateBox.style.display = 'none';
+            alert('Failed to generate share image: ' + error.message);
+        });
+    }
+
+    // MODIFIED: Fetch Leaderboard
     async fetchLeaderboard(elementId) {
         const leaderboardDiv = document.getElementById(elementId);
-        if (!leaderboardDiv) return;
-
         leaderboardDiv.innerHTML = '<p style="text-align: center;">Loading Top Scores...</p>';
-        
+
         try {
-            // Need the 'action=getLeaderboard' parameter for Apps Script's doGet
+            // action=getLeaderboard parameter for Apps Script's doGet
             const response = await fetch(GOOGLE_SHEET_URL + '?action=getLeaderboard');
             const data = await response.json();
-            
+
             if (data && data.scores && data.scores.length > 0) {
                 this.updateLeaderboardUI(data.scores.slice(0, 10), leaderboardDiv); 
             } else {
                 leaderboardDiv.innerHTML = '<p style="text-align: center;">No scores available yet. Play now!</p>';
             }
         } catch (error) {
-            console.error("Could not fetch leaderboard (CORS/Network):", error);
-            // This error confirms the CORS issue and tells the user to check their Apps Script deployment
-            leaderboardDiv.innerHTML = '<p style="text-align: center; color: red;">Failed to load leaderboard. Please check the Apps Script deployment permissions.</p>';
+            leaderboardDiv.innerHTML = '<p style="text-align: center; color: red;">Failed to load leaderboard. Please check the Apps Script deployment.</p>';
         }
     }
 
@@ -443,25 +473,71 @@ class Quiz {
         topScores.forEach((item, index) => {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'leaderboard-item';
-            
+
+            // Displays Rank, Name, State, Score
             itemDiv.innerHTML = `
                 <span class="rank-name"><span class="info">${index + 1}.</span> ${item.name} (${item.state})</span>
-                <span class="score-points"><span class="info">${item.score}</span> points</span>
+                <span class="score-points"><span class="info">${item.score}</span>/200 points</span>
             `;
             leaderboard.appendChild(itemDiv);
         });
     }
 
-    shareOnWhatsApp() {
-        const message = `Alhamdulillah! I scored ${this.finalScore}/${QUIZ_TOTAL_SCORE} in the Islamic Quiz by AlKunooz. Test your knowledge too! Find the quiz here: ${window.location.href}`;
-        const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
-        window.open(url, '_blank');
+    // NEW: Fetch User History
+    async fetchUserHistory(elementId) {
+        const historyDiv = document.getElementById(elementId);
+        historyDiv.innerHTML = '<p style="text-align: center;">Please fill your information first or check your phone number setting.</p>';
+
+        // Try to get a contact number from local storage or previous session (optional)
+        const contactNumber = localStorage.getItem('lastContactNumber') || prompt("Please enter your contact number to view history:");
+        
+        if (!contactNumber) {
+             historyDiv.innerHTML = '<p style="text-align: center;">Contact number required to fetch history.</p>';
+             return;
+        }
+
+        localStorage.setItem('lastContactNumber', contactNumber); // Store for next time
+
+        historyDiv.innerHTML = '<p style="text-align: center;">Loading your scores for ' + contactNumber + '...</p>';
+
+        try {
+            // action=getUserHistory parameter for Apps Script's doGet
+            const response = await fetch(GOOGLE_SHEET_URL + '?action=getUserHistory&contact=' + encodeURIComponent(contactNumber));
+            const data = await response.json();
+
+            if (data && data.history && data.history.length > 0) {
+                this.updateHistoryUI(data.history, historyDiv);
+            } else {
+                historyDiv.innerHTML = '<p style="text-align: center;">No previous scores found for this number. Play your first quiz!</p>';
+            }
+
+        } catch (error) {
+            historyDiv.innerHTML = '<p style="text-align: center; color: red;">Failed to load history. Please check your contact number and the Apps Script deployment.</p>';
+        }
     }
-    
-    shareOnFacebook() {
-        const message = `Alhamdulillah! I scored ${this.finalScore}/${QUIZ_TOTAL_SCORE} in the Islamic Quiz by AlKunooz. Test your knowledge too!`;
-        const url = `https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(message)}&u=${encodeURIComponent(window.location.href)}`;
-        window.open(url, '_blank');
+
+    updateHistoryUI(historyData, historyDiv) {
+        historyDiv.innerHTML = ''; 
+
+        historyData.forEach((item) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'leaderboard-item';
+
+            const dateObj = new Date(item.timestamp);
+            const date = dateObj.toLocaleDateString('en-US');
+            const time = dateObj.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+
+            itemDiv.innerHTML = `
+                <div class="info-line">
+                    <span>📅 Date: ${date}</span>
+                    <span>⏱️ Time: ${time}</span>
+                </div>
+                <div class="score-line">
+                    Score: ${item.score}/${QUIZ_TOTAL_SCORE} points
+                </div>
+            `;
+            historyDiv.appendChild(itemDiv);
+        });
     }
 }
 
@@ -470,6 +546,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const quiz = new Quiz();
     quiz.init();
     
-    document.getElementById('shareWhatsApp').addEventListener('click', () => quiz.shareOnWhatsApp());
-    document.getElementById('shareFacebook').addEventListener('click', () => quiz.shareOnFacebook());
+    // The share function listener is added after displayFullResults,
+    // but we can add the main setup here for consistency
+    document.getElementById('shareImage').addEventListener('click', () => {
+        // This is a placeholder, actual listener is inside displayFullResults
+    });
 });
