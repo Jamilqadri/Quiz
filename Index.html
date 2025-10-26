@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Islamic Quiz - AlKunooz</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <h1>🌙 Islamic Quiz</h1>
+        <p>Test Your Islamic Knowledge</p>
+    </div>
+</header>
+
+<main class="container">
+    <div id="welcomeScreen" class="screen active">
+        <div class="welcome-card">
+            <div class="islamic-design">
+                <div class="mosque-icon">🕌</div>
+            </div>
+            <h2>Welcome to Islamic Quiz</h2>
+            <p>Daily Challenge: 5 Islamic Questions</p>
+
+            <div class="features">
+                <div class="feature">
+                    <span>⏱️</span>
+                    <p>Timer System</p>
+                </div>
+                <div class="feature">
+                    <span>🏆</span>
+                    <p>Score Board</p>
+                </div>
+                <div class="feature">
+                    <span>📊</span>
+                    <p>Leaderboard</p>
+                </div>
+            </div>
+
+            <button id="startQuiz" class="btn-primary">Start Quiz</button>
+
+            <div id="dailyNotice" class="daily-notice" style="display: none;">
+                <p id="noticeText">📅 You can play once per day</p>
+                <p id="countdownTimer" style="font-weight: bold; margin-top: 5px;"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="userInfoScreen" class="screen">
+        <div class="form-card">
+            <h2 id="currentScoreDisplay">Your Score: 0/100</h2>
+            <h3>Enter Your Information to View Full Results</h3>
+            <form id="userInfoForm">
+                <div class="form-group">
+                    <label for="fullName">Full Name *</label>
+                    <input type="text" id="fullName" required placeholder="Enter your full name">
+                </div>
+
+                <div class="form-group">
+                    <label for="contactNumber">Contact Number *</label>
+                    <input type="tel" id="contactNumber" required placeholder="Enter your phone number">
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Complete Address *</label>
+                    <textarea id="address" rows="3" required placeholder="Enter your complete address"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="state">State *</label>
+                    <select id="state" required>
+                        <option value="">Select your state</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn-primary">View Full Score</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="quizScreen" class="screen">
+        <div class="quiz-container">
+            <div class="quiz-header">
+                <div class="progress-bar">
+                    <div class="progress" id="progress"></div>
+                </div>
+                <div class="quiz-info">
+                    <span id="questionCount">Question 1/5</span>
+                    <span id="timer" class="timer">20</span>
+                </div>
+            </div>
+
+            <div class="question-section">
+                <h2 id="questionText" class="question-text"></h2>
+                
+                <div class="options-container" id="optionsContainer">
+                    </div>
+            </div>
+
+            <div class="quiz-footer">
+                <button id="nextQuestion" class="btn-secondary" disabled>Next Question</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultScreen" class="screen">
+        <div class="result-card">
+            <div class="result-header">
+                <div class="score-circle">
+                    <span id="finalScore">0</span>
+                    <small>/100</small>
+                </div>
+                <h2 id="congratsMessage">Congratulations!</h2>
+                <p id="resultMessage">You have completed the quiz</p>
+            </div>
+            
+            <div class="user-summary">
+                <h4>Your Quiz Summary</h4>
+                <p><strong>Name:</strong> <span id="summaryName"></span></p>
+                <p><strong>State:</strong> <span id="summaryState"></span></p>
+                <p><strong>Final Score:</strong> <span id="summaryScore"></span>/100</p>
+            </div>
+
+            <div class="score-breakdown-section">
+                <h3>Detailed Score</h3>
+                <div id="detailedScoreContainer"></div>
+            </div>
+            
+            <div class="share-section">
+                <h3>Share Your Score</h3>
+                <div class="share-buttons">
+                    <button id="shareWhatsApp" class="btn-share whatsapp">
+                        📱 Share on WhatsApp
+                    </button>
+                    <button id="shareFacebook" class="btn-share facebook">
+                        📘 Share on Facebook
+                    </button>
+                </div>
+            </div>
+
+            <div class="leaderboard-section">
+                <h3>Today's Top 10 Scores</h3>
+                <div id="leaderboard" class="leaderboard">
+                    <p style="text-align: center;">Loading Top Scores...</p>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="playAgain" class="btn-primary">Play Again Tomorrow</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="questions.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
