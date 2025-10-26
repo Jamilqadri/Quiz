@@ -21,30 +21,30 @@
                 <div class="mosque-icon">🕌</div>
             </div>
             <h2>Welcome to Islamic Quiz</h2>
-            <p>Daily Challenge: 5 Islamic Questions</p>
+            <p>Daily Challenge: 10 Islamic Questions</p>
 
-            <div class="features">
-                <div class="feature">
+            <div class="features features-v2">
+                <div class="feature" id="openTimerRules">
                     <span>⏱️</span>
-                    <p>Timer System</p>
+                    <p>Timer Rules</p>
                 </div>
-                <div class="feature">
+                <div class="feature" id="openScoreHistory">
+                    <span>📜</span>
+                    <p>Your History</p>
+                </div>
+                <div class="feature" id="openLeaderboard">
                     <span>🏆</span>
-                    <p>Score Board</p>
-                </div>
-                <div class="feature">
-                    <span>📊</span>
-                    <p>Leaderboard</p>
+                    <p>Top Scores</p>
                 </div>
             </div>
 
             <button id="startQuiz" class="btn-primary">Start Quiz</button>
 
             <div id="dailyNotice" class="daily-notice" style="display: none;">
-                <p id="noticeText">📅 You can play once per day</p>
+                <p id="noticeText">📅 You can play once every 5 hours.</p>
                 <p id="countdownTimer" style="font-weight: bold; margin-top: 5px;"></p>
             </div>
-            
+
             <div class="leaderboard-section">
                 <h3>Today's Top 10 Scores</h3>
                 <div id="welcomeLeaderboard" class="leaderboard">
@@ -55,9 +55,35 @@
         </div>
     </div>
 
+    <div id="rulesScreen" class="screen">
+        <div class="form-card">
+            <h2>⏱️ Quiz Timer Rules</h2>
+            <div class="rules-content">
+                <p>You have **20 seconds** to answer each question.</p>
+                <ul>
+                    <li><strong>0-10 Seconds:</strong> Full 20 points awarded for a correct answer.</li>
+                    <li><strong>11-20 Seconds:</strong> A penalty of **2 points per second** is deducted from the base 20 points.</li>
+                    <li><strong>Example:</strong> If you answer correctly in 15 seconds, 5 seconds penalty * 2 points/sec = 10 points deduction. Final score: 20 - 10 = 10 points.</li>
+                    <li><strong>0 Points:</strong> If you take more than 20 seconds, the question is marked incorrect (0 points).</li>
+                </ul>
+            </div>
+            <button class="btn-primary close-screen" data-target="welcomeScreen">Back to Home</button>
+        </div>
+    </div>
+
+    <div id="historyScreen" class="screen">
+        <div class="form-card">
+            <h2>📜 Your Quiz History</h2>
+            <div id="userHistoryList" class="leaderboard">
+                <p style="text-align: center;">Loading your past scores...</p>
+            </div>
+            <button class="btn-primary close-screen" data-target="welcomeScreen">Back to Home</button>
+        </div>
+    </div>
+
     <div id="userInfoScreen" class="screen">
         <div class="form-card">
-            <h2 id="currentScoreDisplay">Your Score: 0/100</h2>
+            <h2 id="currentScoreDisplay">Your Score: 0/200</h2>
             <h3>Enter Your Information to View Full Results</h3>
             <form id="userInfoForm">
                 <div class="form-group">
@@ -81,8 +107,8 @@
                         <option value="">Select your state</option>
                     </select>
                 </div>
-                
-                <button type="submit" class="btn-primary">View Full Score</button>
+
+                <button type="submit" class="btn-primary">View Full Score</button> 
             </form>
         </div>
     </div>
@@ -94,16 +120,16 @@
                     <div class="progress" id="progress"></div>
                 </div>
                 <div class="quiz-info">
-                    <span id="questionCount">Question 1/5</span>
+                    <span id="questionCount">Question 1/10</span>
                     <span id="timer" class="timer">20</span>
                 </div>
             </div>
 
             <div class="question-section">
-                <h2 id="questionText" class="question-text"></h2>
-                
+                <h2 id="questionText" class="question-text"></h2> 
+
                 <div class="options-container" id="optionsContainer">
-                    </div>
+                </div>
             </div>
 
             <div class="quiz-footer">
@@ -117,38 +143,50 @@
             <div class="result-header">
                 <div class="score-circle">
                     <span id="finalScore">0</span>
-                    <small>/100</small>
+                    <small>/200</small>
                 </div>
                 <h2 id="congratsMessage">Congratulations!</h2>
                 <p id="resultMessage">You have completed the quiz</p>
             </div>
-            
+
             <div class="user-summary">
                 <h4>Your Quiz Summary</h4>
                 <p><strong>Name:</strong> <span id="summaryName"></span></p>
                 <p><strong>State:</strong> <span id="summaryState"></span></p>
-                <p><strong>Final Score:</strong> <span id="summaryScore"></span>/100</p>
+                <p><strong>Final Score:</strong> <span id="summaryScore"></span>/200</p>
             </div>
 
             <div class="score-breakdown-section">
                 <h3>Detailed Score</h3>
                 <div id="detailedScoreContainer"></div>
             </div>
-            
+
             <div class="share-section">
                 <h3>Share Your Score</h3>
                 <div class="share-buttons">
-                    <button id="shareWhatsApp" class="btn-share whatsapp">
-                        📱 Share on WhatsApp
+                    <button id="shareImage" class="btn-share whatsapp">
+                        🖼️ Share Score Image
                     </button>
-                    <button id="shareFacebook" class="btn-share facebook">
-                        📘 Share on Facebook
-                    </button>
+                </div>
+                
+                <div id="shareTemplate" class="share-template-box">
+                    <div class="template-content">
+                        <div class="template-header">
+                            <span class="t-mosque">🕌</span>
+                            <h2>Islamic Quiz Score</h2>
+                        </div>
+                        <p class="t-name">Player: <span id="tName"></span></p>
+                        <div class="t-score-box">
+                            <p>Final Score:</p>
+                            <span id="tScore">0</span><small>/200</small>
+                        </div>
+                        <p class="t-footer">AlKunooz | Test Your Knowledge</p>
+                    </div>
                 </div>
             </div>
 
             <div class="action-buttons">
-                <button id="playAgain" class="btn-primary">Play Again Tomorrow</button>
+                <button id="playAgain" class="btn-primary">Play Again After 5 Hours</button>
             </div>
         </div>
     </div>
