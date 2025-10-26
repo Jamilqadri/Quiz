@@ -1,38 +1,59 @@
 // questions.js
-// IMPORTANT: Ensure you have at least 5 questions here. 
-// Note the correct placement of commas and no comma after the final entry.
+// IMPORTANT: Add all your 2000-2500 questions here. 
+// The system will randomly select 10 questions.
+// Only the 'question' text should be in Urdu. Options remain in English.
 
 const quizQuestions = [
     {
-        question: "What is the first month of the Islamic calendar?",
+        question: "اسلامی کیلنڈر کا پہلا مہینہ کون سا ہے؟",
         options: ["Muharram", "Ramadan", "Shawwal", "Dhul-Hijjah"],
         correct: 0 
     },
     {
-        question: "How many obligatory daily prayers (Fard Salah) are there in Islam?",
+        question: "ایک دن میں کتنی فرض نمازیں ہیں؟",
         options: ["3", "4", "5", "6"],
         correct: 2
     },
     {
-        question: "Which prayer is performed immediately after sunset?",
+        question: "قرآن مجید میں سب سے طویل سورت کون سی ہے؟",
+        options: ["Al-Fatiha", "Yaseen", "Al-Baqarah", "Al-Mulk"],
+        correct: 2
+    },
+    {
+        question: "کس نماز کو سورج غروب ہونے کے فوراً بعد ادا کیا جاتا ہے؟",
         options: ["Fajr", "Dhuhr", "Asr", "Maghrib"],
         correct: 3
     },
     {
-        question: "What is the name of the angel who delivers revelations to the Prophets?",
+        question: "اللہ تعالیٰ کے آخری نبی کا نام کیا ہے؟",
+        options: ["Isa (A.S)", "Musa (A.S)", "Muhammad (S.A.W)", "Ibrahim (A.S)"],
+        correct: 2
+    },
+    {
+        question: "اس فرشتے کا کیا نام ہے جو انبیاء کو وحی پہنچاتے تھے؟",
         options: ["Israfeel", "Mikaeel", "Jibreel", "Azrael"],
         correct: 2
     },
     {
-        question: "How many times is it compulsory to circle the Kaaba (Tawaf) during Hajj or Umrah?",
+        question: "حج یا عمرہ کے دوران خانہ کعبہ کے گرد کتنی بار چکر لگانا فرض ہے؟",
         options: ["3", "5", "7", "10"],
         correct: 2
     },
     {
-        question: "Which is the longest Surah (Chapter) in the Holy Quran?",
-        options: ["Al-Fatiha", "Yaseen", "Al-Baqarah", "Al-Mulk"],
+        question: "مسلمانوں کی پہلی قبلہ گاہ کون سی تھی؟",
+        options: ["Masjid Al-Haram", "Masjid-e-Nabawi", "Masjid Al-Aqsa", "Dome of the Rock"],
         correct: 2
     },
-    // Add your remaining questions here, maintaining the exact format.
-    // The very last question must NOT have a comma at the end.
+    {
+        question: "رمضان کے مہینے میں روزہ رکھنا اسلام کے کتنے ارکان میں سے ہے؟",
+        options: ["1st", "2nd", "3rd", "4th"],
+        correct: 3
+    },
+    {
+        question: "قرآن مجید میں کل کتنی سورتیں ہیں؟",
+        options: ["110", "114", "120", "124"],
+        correct: 1
+    },
+    // آپ اپنے باقی سوالات (2000+) یہاں اسی فارمیٹ میں شامل کر سکتے ہیں۔
+    // آخری سوال کے بعد کوئی کوما نہ لگائیں۔
 ];
