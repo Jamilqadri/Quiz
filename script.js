@@ -1,4 +1,4 @@
-// script.js
+// script.js - (FINAL CORRECTED VERSION)
 
 // --- CONFIGURATION ---
 // REPLACE THIS WITH YOUR ACTUAL GOOGLE APPS SCRIPT URL
@@ -33,20 +33,23 @@ class Quiz {
         this.timeLeft = MAX_TIME_PER_QUESTION;
         this.timeTaken = 0;
         this.hasAnswered = false; 
+        this.lockTimer = null; // Ensure lockTimer is initialized
     }
 
     init() {
-        // Safety check for questions data
-        if (!window.quizQuestions || window.quizQuestions.length < NUM_QUESTIONS) {
-            console.error("FATAL ERROR: Questions array not found or too small. Check questions.js syntax.");
-            document.getElementById('startQuiz').disabled = true;
-            document.getElementById('noticeText').textContent = '⚠️ Quiz questions not loaded! Check question file.';
-            return;
-        }
-
+        // *** CHANGE 1: REMOVED the redundant safety check from here. ***
+        // The safety check should be in startQuiz to ensure event listeners are always set up.
+        
         this.populateStates();
         this.setupEventListeners();
         this.checkQuizLock();
+        
+        // Initial check for questions and showing error on welcome screen
+        if (!window.quizQuestions || !Array.isArray(window.quizQuestions) || window.quizQuestions.length < NUM_QUESTIONS) {
+            document.getElementById('startQuiz').disabled = true;
+            document.getElementById('noticeText').textContent = '⚠️ اہم غلطی: سوالات لوڈ نہیں ہوئے۔ براہ کرم questions.js فائل چیک کریں۔';
+            document.getElementById('dailyNotice').style.display = 'block';
+        }
     }
     
     // --- UI/Screen Management & Setup ---
@@ -94,6 +97,9 @@ class Quiz {
         const dailyNotice = document.getElementById('dailyNotice');
         const countdownTimer = document.getElementById('countdownTimer');
 
+        // Preserve initial error message if questions failed to load in init
+        const initialNoticeText = document.getElementById('noticeText').textContent;
+
         if (lastPlayed) {
             const timeElapsed = now - parseInt(lastPlayed);
             
@@ -108,14 +114,16 @@ class Quiz {
             } else {
                 // Lock expired
                 startQuizBtn.disabled = false;
-                dailyNotice.style.display = 'none';
+                dailyNotice.style.display = initialNoticeText.includes('اہم غلطی') ? 'block' : 'none'; // Keep error visible
                 countdownTimer.textContent = '';
-                localStorage.removeItem('lastPlayedTimestamp');
+                if (!initialNoticeText.includes('اہم غلطی')) {
+                     localStorage.removeItem('lastPlayedTimestamp');
+                }
             }
         } else {
             // Never played or lock expired
-            startQuizBtn.disabled = false;
-            dailyNotice.style.display = 'none';
+            startQuizBtn.disabled = document.getElementById('noticeText').textContent.includes('اہم غلطی');
+            dailyNotice.style.display = document.getElementById('noticeText').textContent.includes('اہم غلطی') ? 'block' : 'none';
         }
 
         this.fetchLeaderboard('welcomeLeaderboard'); 
@@ -149,8 +157,17 @@ class Quiz {
     // --- QUIZ SETUP/FLOW ---
 
     startQuiz() {
-        if (!window.quizQuestions || window.quizQuestions.length < NUM_QUESTIONS) {
-            alert("Error: Quiz questions not fully loaded. Check your questions.js file!");
+        // *** CHANGE 2: MOVED & CORRECTED Safety Check to startQuiz ***
+        if (!window.quizQuestions || !Array.isArray(window.quizQuestions) || window.quizQuestions.length < NUM_QUESTIONS) {
+            console.error("FATAL ERROR: Questions array not loaded correctly. Check questions.js syntax/file path.");
+            
+            // Show user-friendly error
+            alert("اہم غلطی: کوئز کے سوالات لوڈ نہیں ہو سکے یا file/syntax غلط ہے۔ براہ کرم questions.js چیک کریں!");
+            
+            // Ensure UI reflects the error
+            document.getElementById('noticeText').textContent = '⚠️ اہم غلطی: سوالات لوڈ نہیں ہوئے۔ براہ کرم questions.js فائل چیک کریں۔';
+            document.getElementById('dailyNotice').style.display = 'block';
+            document.getElementById('startQuiz').disabled = true;
             return;
         }
         
@@ -335,10 +352,8 @@ class Quiz {
             body: new URLSearchParams(quizData).toString()
         }).then(() => {
             console.log('Quiz data silently sent to Google Sheets.');
-            // No need to re-fetch immediately, will fetch on next welcome screen load
         }).catch(error => {
             console.error('Error sending data to Google Sheets (CORS/Network issue likely):', error);
-            // Quiz continues to result screen even if data saving fails
         });
     }
 
